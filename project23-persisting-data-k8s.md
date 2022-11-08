@@ -460,7 +460,8 @@ kubectl get storageclass
 ~~~
 **Output:**
 ~~~
-
+NAME            PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+gp2 (default)   kubernetes.io/aws-ebs   Delete          WaitForFirstConsumer   false                  79m
 ~~~
 If the cluster is not EKS, then the storage class will be different. For example if the cluster is based on Google’s GKE or Azure’s AKS, then the storage class will be different.
 
@@ -502,7 +503,7 @@ PVs are resources in the cluster. PVCs are requests for those resources and also
 
 1. When PVCs are created with a specific size, it cannot be expanded except the storageClass is configured to allow expansion with the allowVolumeExpansion field is set to true in the manifest YAML file. This is "unset" by default in EKS.
 2. When a PV has been provisioned in a specific availability zone, only pods running in that zone can use the PV. If a pod spec containing a PVC is created in another AZ and attempts to reuse an already bound PV, then the pod will remain in pending state and report volume node affinity conflict. Anytime you see this message, this will help you to understand what the problem is.
-3. PVs are not scoped to namespaces, they a clusterwide wide resource. PVCs on the other hand are namespace scoped.
+3. PVs are not scoped to namespaces, they a cluster-wide resource. PVCs on the other hand are namespace scoped.
 
 Further study on [Persistent Volumes here](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#types-of-persistent-volumes) 
 
@@ -527,11 +528,11 @@ Now lets create some persistence for our nginx deployment.
  Apply the manifest file
  
  ~~~
- kubectl apply -f pvc.yaml
+ kubectl apply -f nginx-pvc.yaml
  ~~~
  **Output:**
  ~~~
- 
+ persistentvolumeclaim/nginx-volume-claim created
  ~~~
  
  Run get command on the pvc
@@ -540,7 +541,8 @@ Now lets create some persistence for our nginx deployment.
  ~~~
  **Output:**
  ~~~
- 
+ NAME                 STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+nginx-volume-claim   Pending                                      gp2            71s
  ~~~
  The PVC will be at Pending state, run decribe command the get more insight
  ~~~
@@ -548,7 +550,22 @@ Now lets create some persistence for our nginx deployment.
  ~~~
  **Output:**
  ~~~
- 
+ Name:          nginx-volume-claim
+Namespace:     default
+StorageClass:  gp2
+Status:        Pending
+Volume:        
+Labels:        <none>
+Annotations:   <none>
+Finalizers:    [kubernetes.io/pvc-protection]
+Capacity:      
+Access Modes:  
+VolumeMode:    Filesystem
+Used By:       <none>
+Events:
+  Type    Reason                Age                   From                         Message
+  ----    ------                ----                  ----                         -------
+  Normal  WaitForFirstConsumer  11s (x10 over 2m17s)  persistentvolume-controller  **waiting for first consumer to be created before binding**
  ~~~
  
  If you run *kubectl get pv* you will see that no PV is created yet. The *waiting for first consumer to be created before binding* is a configuration setting from the storageClass. See the `VolumeBindingMode` section below.
