@@ -218,3 +218,11 @@ In as much as we now have a way to persist data, we also have new problems.
 
 1. If you port forward the service and try to reach the endpoint, you will get a 403 error. This is because mounting a volume on a filesystem that already contains data will automatically erase all the existing data. This strategy for statefulness is preferred if the mounted volume already contains the data which you want to be made available to the container.
 insert the 403 error page here! ![]()
+
+2. It is still a manual process to create a volume, manually ensure that the volume created is in the same Avaioability zone in which the pod is running, and then update the manifest file to use the volume ID. All of these is against DevOps principles because it will mean having a lot of road blocks to getting a simple thing done.
+
+The more elegant way to achieve this is through *Persistent Volume* and *Persistent Volume claims*.
+
+In kubernetes, there are many elegant ways of persisting data. Each of which is used to satisfy different use cases. Lets take a look at the different options available
+
+### MANAGING VOLUMES DYNAMICALLY WITH PVS AND PVCS ###
