@@ -364,9 +364,99 @@ spec:
         - containerPort: 80
         volumeMounts:
         - name: nginx-volume-claim
-          mountPath: "/tmp/dare"
+          mountPath: "/tmp/bayo"
       volumes:
       - name: nginx-volume-claim
         persistentVolumeClaim:
           claimName: nginx-volume-claim
+~~~
+
+Notice that the volumes section nnow has a **persistentVolumeClaim**. With the new deployment manifest, the **/tmp/bayo** directory will be persisted, and any data written in there will be stored permanetly on the volume, which can be used by another Pod if the current one gets replaced.
+
+Now lets check the dynamically created PV
+~~~
+kubectl get pvc
+~~~
+
+**Output:**
+~~~
+
+~~~
+
+You can copy the PV Name and search in the AWS console. You will notice that the volum has been dynamically created there.
+
+Insert the screenshot of the pv here! ![]()
+
+**Approach 2**
+
+1. Create a volumeClaimTemplate within the Pod spec. This approach is simply adding the manifest for PVC right within the Pod spec of the deployment.
+2. Then use the PVC name just as Approach 1 above.
+
+So rather than have 2 manifest files, you will define everything within the deployment manifest.
+
+### CONFIGMAP ###
+
+Using configMaps for persistence is not something you would consider for data storage. Rather it is a way to manage configuration files and ensure they are not lost as a result of Pod replacement.
+
+to demonstrate this, we will use the HTML file that came with Nginx. This file can be found in */usr/share/nginx/html/index.html*  directory.
+
+Lets go through the below process so that you can see an example of a *configMap* use case.
+
+1. Remove the volumeMounts and PVC sections of the manifest and use kubectl to apply the configuration
+
+2. port forward the service and ensure that you are able to see the "Welcome to nginx" page
+
+3. exec into the running container and keep a copy of the index.html file somewhere. For example
+~~~
+kubectl exec -it nginx-deployment-xxxxx-xxxx -- bash
+~~~
+~~~
+cat /usr/share/nginx/html/index.html
+~~~
+**Output:**
+~~~
+
+~~~
+4. Copy the output and save the file on your local pc because we will need it to create a configmap.
+
+**Persisting configuration data with configMaps**
+
+According to the official documentation of configMaps, A ConfigMap is an API object used to store non-confidential data in key-value pairs. Pods can consume ConfigMaps as environment variables, command-line arguments, or as configuration files in a volume.
+
+In our own use case here, We will use configMap to create a file in a volume.
+
+The manifest file we look like:
+~~~
+cat <<EOF | tee ./nginx-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: website-index-file
+data:
+  # file to be mounted inside a volume
+  index-file: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>Welcome to nginx!</title>
+    <style>
+    html { color-scheme: light dark; }
+    body { width: 35em; margin: 0 auto;
+    font-family: Tahoma, Verdana, Arial, sans-serif; }
+    </style>
+    </head>
+    <body>
+    <h1>Welcome to nginx!</h1>
+    <p>If you see this page, the nginx web server is successfully installed and
+    working. Further configuration is required.</p>
+
+    <p>For online documentation and support please refer to
+    <a href="http://nginx.org/">nginx.org</a>.<br/>
+    Commercial support is available at
+    <a href="http://nginx.com/">nginx.com</a>.</p>
+
+    <p><em>Thank you for using nginx.</em></p>
+    </body>
+    </html>
+EOF
 ~~~
