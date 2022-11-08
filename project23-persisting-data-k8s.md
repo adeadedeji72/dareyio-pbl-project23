@@ -286,3 +286,87 @@ PVs are resources in the cluster. PVCs are requests for those resources and also
 1. When PVCs are created with a specific size, it cannot be expanded except the storageClass is configured to allow expansion with the allowVolumeExpansion field is set to true in the manifest YAML file. This is "unset" by default in EKS.
 2. When a PV has been provisioned in a specific availability zone, only pods running in that zone can use the PV. If a pod spec containing a PVC is created in another AZ and attempts to reuse an already bound PV, then the pod will remain in pending state and report volume node affinity conflict. Anytime you see this message, this will help you to understand what the problem is.
 3. PVs are not scoped to namespaces, they a clusterwide wide resource. PVCs on the other hand are namespace scoped.
+
+Further study on [Persistent Volumes here](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#types-of-persistent-volumes) 
+
+Now lets create some persistence for our nginx deployment.
+
+**Approach One**
+1. Create a manifest file for a PVC, and based on the gp2 storageClass a PV will be dynamically created
+~~~
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: nginx-volume-claim
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 2Gi
+      storageClassName: gp2
+ ~~~
+ 
+ Apply the manifest file
+ 
+ ~~~
+ kubectl apply -f pvc.yaml
+ ~~~
+ **Output:**
+ ~~~
+ 
+ ~~~
+ 
+ Run get command on the pvc
+ ~~~
+ kubectl get pvc
+ ~~~
+ **Output:**
+ ~~~
+ 
+ ~~~
+ The PVC will be at Pending state, run decribe command the get more insight
+ ~~~
+ kubectl describe pvc
+ ~~~
+ **Output:**
+ ~~~
+ 
+ ~~~
+ 
+ If you run *kubectl get pv* you will see that no PV is created yet. The *waiting for first consumer to be created before binding* is a configuration setting from the storageClass. See the `VolumeBindingMode` section below.
+ ~~~
+ 
+ ~~~
+ To proceed, simply apply the new deployment configuration below.
+ Configure the Pod spec to use the PVC
+ ~~~
+ apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    tier: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        tier: frontend
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-volume-claim
+          mountPath: "/tmp/dare"
+      volumes:
+      - name: nginx-volume-claim
+        persistentVolumeClaim:
+          claimName: nginx-volume-claim
+~~~
