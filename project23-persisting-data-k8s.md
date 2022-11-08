@@ -77,7 +77,7 @@ metadata:
   labels:
     tier: frontend
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       tier: frontend
@@ -97,8 +97,87 @@ EOF
 **Tasks**
 
 - Verify that the pod is running
+~~~
+kubectl get pod
+NAME                                READY   STATUS    RESTARTS   AGE
+nginx-deployment-55c7d849bc-t74r9   1/1     Running   0          3m52s
+~~~
 - Check the logs of the pod
+~~~
+kubectl logs nginx-deployment-55c7d849bc-t74r9
+/docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+/docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+10-listen-on-ipv6-by-default.sh: info: Getting the checksum of /etc/nginx/conf.d/default.conf
+10-listen-on-ipv6-by-default.sh: info: Enabled listen on IPv6 in /etc/nginx/conf.d/default.conf
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+2022/11/08 13:51:55 [notice] 1#1: using the "epoll" event method
+2022/11/08 13:51:55 [notice] 1#1: nginx/1.23.2
+2022/11/08 13:51:55 [notice] 1#1: built by gcc 10.2.1 20210110 (Debian 10.2.1-6)
+2022/11/08 13:51:55 [notice] 1#1: OS: Linux 5.4.209-116.367.amzn2.x86_64
+2022/11/08 13:51:55 [notice] 1#1: getrlimit(RLIMIT_NOFILE): 1048576:1048576
+2022/11/08 13:51:55 [notice] 1#1: start worker processes
+2022/11/08 13:51:55 [notice] 1#1: start worker process 29
+2022/11/08 13:51:55 [notice] 1#1: start worker process 30
+/docker-entrypoint.sh: Configuration complete; ready for start up
+~~~
 - Exec into the pod and navigate to the nginx configuration file /etc/nginx/conf.d
+~~~
+kubectl exec -it nginx-deployment-55c7d849bc-t74r9 bash
+cd /etc/nginx/conf.g
+cat default.conf
+
+root@nginx-deployment-55c7d849bc-t74r9:/# cd /etc/nginx/conf.d/
+root@nginx-deployment-55c7d849bc-t74r9:/etc/nginx/conf.d# ls
+default.conf
+root@nginx-deployment-55c7d849bc-t74r9:/etc/nginx/conf.d# cat default.conf
+server {
+    listen       80;
+    listen  [::]:80;
+    server_name  localhost;
+
+    #access_log  /var/log/nginx/host.access.log  main;
+
+    location / {
+        root   /usr/share/nginx/html;
+        index  index.html index.htm;
+    }
+
+    #error_page  404              /404.html;
+
+    # redirect server error pages to the static page /50x.html
+    #
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   /usr/share/nginx/html;
+    }
+
+    # proxy the PHP scripts to Apache listening on 127.0.0.1:80
+    #
+    #location ~ \.php$ {
+    #    proxy_pass   http://127.0.0.1;
+    #}
+
+    # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
+    #
+    #location ~ \.php$ {
+    #    root           html;
+    #    fastcgi_pass   127.0.0.1:9000;
+    #    fastcgi_index  index.php;
+    #    fastcgi_param  SCRIPT_FILENAME  /scripts$fastcgi_script_name;
+    #    include        fastcgi_params;
+    #}
+
+    # deny access to .htaccess files, if Apache's document root
+    # concurs with nginx's one
+    #
+    #location ~ /\.ht {
+    #    deny  all;
+    #}
+}
+
+~~~
 - Open the config files to see the default configuration.
 
 **NOTE:** There are some restrictions when using an awsElasticBlockStore volume:
