@@ -531,3 +531,17 @@ You can now see that the index.html is now a soft link to ../data
 Lets try that;
 
 - List the available configmaps. You can either use kubectl get configmap or kubectl get cm
+~~~
+kubectl get cm
+~~~
+**Output:**
+~~~
+
+~~~
+We are interested in the website-index-file configmap
+
+  - Update the configmap. You can either update the manifest file, or the kubernetes object directly. Lets use the latter approach this time.
+~~~
+    kubectl edit cm website-index-file 
+~~~
+    It will open up a vim editor, or whatever default editor your system is configured to use. Update the content as you like. "Only the html data section", then save  the file.
