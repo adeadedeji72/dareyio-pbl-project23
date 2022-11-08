@@ -113,3 +113,108 @@ Now that we have the pod running without a volume, Lets now create a volume from
 1. In AWS console, go to the EC2 section and scroll down to the Elastic Block Storage menu.
 1. Click on Volumes
 1. At the top right, click on Create Volume
+insert EBS console screenshot here!
+1. Part of the requirements is to ensure that the volume exists in the same region and availability zone as the EC2 instance running the pod. Hence, we need to find out
+
+Which node is running the pod
+~~~
+kubectl get pod nginx-deployment-xxxxxxx-xxxx -o wide
+~~~~
+**Output:**
+~~~
+
+~~~
+
+The *NODE* column shows the node the pode is running on
+
+In which Availability Zone the node is running.
+~~~
+kubectl describe node ip-xx.xx.xx.xx-us-east-1x.compute.internal
+~~~
+insert the output screenshot here!
+
+4. So, in the case above, we know the AZ for the node is in eus-east-1x hence, the volume must be created in the same AZ. Choose the size of the required volume.
+The create volume selection should be like:
+Insert the create volume screenshot here! ![]()
+
+5. Copy the VolumeID
+Insert the volume ID page here ![]()
+
+6. Update the deployment configuration with the volume spec.
+
+~~~
+
+~~~
+
+7. Apply the new configuration and check the pod. As you can see, the old pod is being terminated while the updated one is up and running
+~~~
+kubectl apply -f nginx-pod.yaml
+~~~
+~~~
+kubectl get pods
+~~~
+**Output:**
+~~~
+
+~~~
+
+Now, the new pod has a volume attached to it, and can be used to run a container for statefuleness. Go ahead and explore the running pod. Run describe on both the **pod** and **deployment**
+**Outputs:**
+~~~
+
+~~~
+~~~
+
+~~~
+
+At this point, even though the pod can be used for a stateful application, the configuration is not yet complete. This is because, the volume is not yet mounted onto any specific filesystem inside the container. The directory */usr/share/nginx/html* which holds the software/website code is still ephemeral, and if there is any kind of update to the index.html file, the new changes will only be there for as long as the pod is still running. If the pod dies after, all previously written data will be erased.
+
+To complete the configuration, we will need to add another section to the deployment yaml manifest. The **volumeMounts** which basically answers the question "Where should this Volume be mounted inside the container?" Mounting a volume to a directory means that all data written to the directory will be stored on that volume.
+
+Lets do that now.
+~~~
+cat <<EOF | tee ./nginx-pod.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    tier: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        tier: frontend
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-volume
+          mountPath: /usr/share/nginx/
+      volumes:
+      - name: nginx-volume
+        # This AWS EBS volume must already exist.
+        awsElasticBlockStore:
+          volumeID: "  vol-07b537651bbe68be0"
+          fsType: ext4
+EOF
+~~~
+Notice the newly added section:
+~~~
+        volumeMounts:
+        - name: nginx-volume
+          mountPath: /usr/share/nginx/
+~~~
+The value provided to name in volumeMounts must be the same value used in the volumes section. It basically means mount the volume with the name provided, to the provided mountpath
+
+In as much as we now have a way to persist data, we also have new problems.
+
+1. If you port forward the service and try to reach the endpoint, you will get a 403 error. This is because mounting a volume on a filesystem that already contains data will automatically erase all the existing data. This strategy for statefulness is preferred if the mounted volume already contains the data which you want to be made available to the container.
+insert the 403 error page here! ![]()
