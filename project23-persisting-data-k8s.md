@@ -226,3 +226,41 @@ The more elegant way to achieve this is through *Persistent Volume* and *Persist
 In kubernetes, there are many elegant ways of persisting data. Each of which is used to satisfy different use cases. Lets take a look at the different options available
 
 ### MANAGING VOLUMES DYNAMICALLY WITH PVS AND PVCS ###
+
+Kubernetes provides API objects for storage management such that, the lower level details of volume provisioning, storage allocation, access management etc are all abstracted away from the user, and all you have to do is present manifest files that describes what you want to get done.
+
+PVs are volume plugins that have a lifecycle completely independent of any individual Pod that uses the PV. This means that even when a pod dies, the PV remains. A PV is a piece of storage in the cluster that is either provisioned by an administrator through a manifest file, or it can be dynamically created if a storage class has been pre-configured.
+
+Creating a PV manually is like what we have done previously where with creating the volume from the console. As much as possible, we should allow PVs to be created automatically just be adding it to the container spec iin deployments. But without a **storageclass** present in the cluster, PVs cannot be automatically created.
+
+If your infrastructure relies on a storage system such as NFS, iSCSI or a cloud provider-specific storage system such as EBS on AWS, then you can dynamically create a PV which will create a volume that a Pod can then use. This means that there must be a **storageClass resource** in the cluster before a PV can be provisioned.
+
+By default, in EKS, there is a default storageClass configured as part of EKS installation. This storageclass is based on **gp2** which is Amazon’s default type of volume for Elastic block storage. gp2 is backled by solid-state drives (SSDs) which means they are suitable for a broad range of transactional workloads.
+
+Run the command below to check if you already have a storageclass in your cluster 
+~~~
+kubectl get storageclass
+~~~
+**Output:**
+~~~
+
+~~~
+If the cluster is not EKS, then the storage class will be different. For example if the cluster is based on Google’s GKE or Azure’s AKS, then the storage class will be different.
+
+If there is no storage class in your cluster, below manifest is an example of how one would be created
+~~~
+ kind: StorageClass
+  apiVersion: storage.k8s.io/v1
+  metadata:
+    name: gp2
+    annotations:
+      storageclass.kubernetes.io/is-default-class: "true"
+  provisioner: kubernetes.io/aws-ebs
+  parameters:
+    type: gp2
+    fsType: ext4
+ ~~~
+ then apply the file with **kubectl apply -f filename.yaml**
+ 
+ A **PersistentVolumeClaim** (PVC) on the other hand is a request for storage. Just as Pods consume node resources, PVCs consume PV resources. Pods can request specific levels of resources (CPU and Memory). Claims can request specific size and access modes (e.g., they can be mounted **ReadWriteOnce**, **ReadOnlyMany** or **ReadWriteMany**, see [AccessModes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes).
+
