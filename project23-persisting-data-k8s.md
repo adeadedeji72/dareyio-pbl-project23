@@ -550,6 +550,7 @@ You should see an output like this
 ~~~
 configmap/website-index-file edited
 ~~~
+~~~
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -579,8 +580,19 @@ data:
     <p><em>Thank you and make sure you are on Darey's Masterclass Program.</em></p>
     </body>
     </html>
-    ~~~
+~~~
     
     Without restarting the pod, your site should be loaded automatically.
     
+    Insert webpage screenshot here ![]()
     
+    If you wish to restart the deployment for any reason, simply use the command
+~~~
+   kubectl rollout restart deploy nginx-deployment 
+~~~ 
+**output:**
+~~~
+deployment.apps/nginx-deployment restarted
+~~~
+
+This will terminate the running pod and spin up a new one.
