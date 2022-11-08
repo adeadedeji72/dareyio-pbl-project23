@@ -128,6 +128,10 @@ kubectl exec -it nginx-deployment-55c7d849bc-t74r9 bash
 cd /etc/nginx/conf.g
 cat default.conf
 
+~~~
+- Open the config files to see the default configuration.
+~~~
+
 root@nginx-deployment-55c7d849bc-t74r9:/# cd /etc/nginx/conf.d/
 root@nginx-deployment-55c7d849bc-t74r9:/etc/nginx/conf.d# ls
 default.conf
@@ -178,8 +182,6 @@ server {
 }
 
 ~~~
-- Open the config files to see the default configuration.
-
 **NOTE:** There are some restrictions when using an awsElasticBlockStore volume:
 
 - The nodes on which pods are running must be AWS EC2 instances
@@ -192,29 +194,31 @@ Now that we have the pod running without a volume, Lets now create a volume from
 1. In AWS console, go to the EC2 section and scroll down to the Elastic Block Storage menu.
 1. Click on Volumes
 1. At the top right, click on Create Volume
-insert EBS console screenshot here!
+![](create-ebs-volume.png)
+
 1. Part of the requirements is to ensure that the volume exists in the same region and availability zone as the EC2 instance running the pod. Hence, we need to find out
 
 Which node is running the pod
 ~~~
-kubectl get pod nginx-deployment-xxxxxxx-xxxx -o wide
+kubectl get pod nginx-deployment-55c7d849bc-t74r9 -o wide
 ~~~~
 **Output:**
 ~~~
-
+NAME                                READY   STATUS    RESTARTS   AGE   IP           NODE                         NOMINATED NODE   READINESS GATES
+nginx-deployment-55c7d849bc-t74r9   1/1     Running   0          18m   10.0.1.150   ip-10-0-1-144.ec2.internal   <none>           <none>
 ~~~
 
-The *NODE* column shows the node the pode is running on
+The *NODE* column shows the node the pod is running on
 
 In which Availability Zone the node is running.
 ~~~
-kubectl describe node ip-xx.xx.xx.xx-us-east-1x.compute.internal
+kubectl describe node ip-10-0-1-144.ec2.internal
 ~~~
-insert the output screenshot here!
+![](eks-pod-region.jpg)
 
-4. So, in the case above, we know the AZ for the node is in eus-east-1x hence, the volume must be created in the same AZ. Choose the size of the required volume.
+4. So, in the case above, we know the AZ for the node is in eus-east-1b hence, the volume must be created in the same AZ. Choose the size of the required volume.
 The create volume selection should be like:
-Insert the create volume screenshot here! ![]()
+![](create-volume.jpg)
 
 5. Copy the VolumeID
 Insert the volume ID page here ![]()
