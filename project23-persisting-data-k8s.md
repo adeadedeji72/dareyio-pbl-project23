@@ -221,12 +221,40 @@ The create volume selection should be like:
 ![](create-volume.jpg)
 
 5. Copy the VolumeID
-Insert the volume ID page here ![]()
+![](volume-id.jpg)
 
 6. Update the deployment configuration with the volume spec.
 
 ~~~
-
+sudo cat <<EOF | sudo tee ./nginx-pod.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    tier: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        tier: frontend
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+      volumes:
+      - name: nginx-volume
+        # This AWS EBS volume must already exist.
+        awsElasticBlockStore:
+          volumeID: "vol-0c54447addeec1ef5"
+          fsType: ext4
+EOF
 ~~~
 
 7. Apply the new configuration and check the pod. As you can see, the old pod is being terminated while the updated one is up and running
@@ -238,15 +266,121 @@ kubectl get pods
 ~~~
 **Output:**
 ~~~
-
+NAME                               READY   STATUS    RESTARTS   AGE
+nginx-deployment-6c7764449-7bkdm   1/1     Running   0          10s
 ~~~
 
 Now, the new pod has a volume attached to it, and can be used to run a container for statefuleness. Go ahead and explore the running pod. Run describe on both the **pod** and **deployment**
+~~~
+kubectl describe pod
+kubectl describe deployment
+~~~
 **Outputs:**
 ~~~
+docker@docker1:~/prj22/terraform-provider-aws/examples/eks-getting-started$ kubectl describe pod
+Name:             nginx-deployment-6c7764449-7bkdm
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             ip-10-0-1-144.ec2.internal/10.0.1.144
+Start Time:       Tue, 08 Nov 2022 14:27:20 +0000
+Labels:           pod-template-hash=6c7764449
+                  tier=frontend
+Annotations:      kubernetes.io/psp: eks.privileged
+Status:           Running
+IP:               10.0.1.27
+IPs:
+  IP:           10.0.1.27
+Controlled By:  ReplicaSet/nginx-deployment-6c7764449
+Containers:
+  nginx:
+    Container ID:   docker://09206dac832e2c48146c072df81305977d6ae706d27e47fd0553783595c6b227
+    Image:          nginx:latest
+    Image ID:       docker-pullable://nginx@sha256:943c25b4b66b332184d5ba6bb18234273551593016c0e0ae906bab111548239f
+    Port:           80/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Tue, 08 Nov 2022 14:27:22 +0000
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-vllz8 (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  nginx-volume:
+    Type:       AWSElasticBlockStore (a Persistent Disk resource in AWS)
+    VolumeID:   vol-0c54447addeec1ef5
+    FSType:     ext4
+    Partition:  0
+    ReadOnly:   false
+  kube-api-access-vllz8:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age    From               Message
+  ----    ------     ----   ----               -------
+  Normal  Scheduled  2m43s  default-scheduler  Successfully assigned default/nginx-deployment-6c7764449-7bkdm to ip-10-0-1-144.ec2.internal
+  Normal  Pulling    2m42s  kubelet            Pulling image "nginx:latest"
+  Normal  Pulled     2m42s  kubelet            Successfully pulled image "nginx:latest" in 117.611668ms
+  Normal  Created    2m42s  kubelet            Created container nginx
+  Normal  Started    2m41s  kubelet            Started container nginx
 
 ~~~
 ~~~
+docker@docker1:~/prj22/terraform-provider-aws/examples/eks-getting-started$ kubectl describe deployment
+Name:                   nginx-deployment
+Namespace:              default
+CreationTimestamp:      Tue, 08 Nov 2022 13:51:49 +0000
+Labels:                 tier=frontend
+Annotations:            deployment.kubernetes.io/revision: 2
+Selector:               tier=frontend
+Replicas:               1 desired | 1 updated | 1 total | 1 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:  tier=frontend
+  Containers:
+   nginx:
+    Image:        nginx:latest
+    Port:         80/TCP
+    Host Port:    0/TCP
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:
+   nginx-volume:
+    Type:       AWSElasticBlockStore (a Persistent Disk resource in AWS)
+    VolumeID:   vol-0c54447addeec1ef5
+    FSType:     ext4
+    Partition:  0
+    ReadOnly:   false
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Available      True    MinimumReplicasAvailable
+  Progressing    True    NewReplicaSetAvailable
+OldReplicaSets:  <none>
+NewReplicaSet:   nginx-deployment-6c7764449 (1/1 replicas created)
+Events:
+  Type    Reason             Age   From                   Message
+  ----    ------             ----  ----                   -------
+  Normal  ScalingReplicaSet  39m   deployment-controller  Scaled up replica set nginx-deployment-55c7d849bc to 3
+  Normal  ScalingReplicaSet  35m   deployment-controller  Scaled down replica set nginx-deployment-55c7d849bc to 1
+  Normal  ScalingReplicaSet  4m6s  deployment-controller  Scaled up replica set nginx-deployment-6c7764449 to 1
+  Normal  ScalingReplicaSet  4m4s  deployment-controller  Scaled down replica set nginx-deployment-55c7d849bc to 0
 
 ~~~
 
