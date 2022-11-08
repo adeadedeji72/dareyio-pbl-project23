@@ -106,3 +106,10 @@ EOF
 - The nodes on which pods are running must be AWS EC2 instances
 - Those instances need to be in the same region and availability zone as the EBS volume
 - EBS only supports a single EC2 instance mounting a volume
+
+
+Now that we have the pod running without a volume, Lets now create a volume from the AWS console.
+
+1. In AWS console, go to the EC2 section and scroll down to the Elastic Block Storage menu.
+1. Click on Volumes
+1. At the top right, click on Create Volume
