@@ -460,3 +460,74 @@ data:
     </html>
 EOF
 ~~~
+
+- Apply the new manifest file
+
+~~~
+kubectl apply -f nginx-configmap.yaml
+~~~
+
+- Update the deployment file to use the configmap in the volumeMounts section
+~~~
+
+    </html>
+EOF
+Apply the new manifest file
+ kubectl apply -f nginx-configmap.yaml 
+Update the deployment file to use the configmap in the volumeMounts section
+cat <<EOF | tee ./nginx-pod-with-cm.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    tier: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        tier: frontend
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - name: config
+            mountPath: /usr/share/nginx/html
+            readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: website-index-file
+          items:
+          - key: index-file
+            path: index.html
+EOF
+~~~
+
+Now the *index.html* file is no longer ephemeral because it is using a configMap that has been mounted onto the filesystem. This is now evident when you **exec** into the pod and list the /usr/share/nginx/html directory
+~~~
+kubectl exec -it nginx-deployment-xxxxxx-xxxx bash
+~~~
+~~~
+ls -ltr /usr/share/nginx/html
+~~~
+**Output:**
+~~~
+
+~~~
+You can now see that the index.html is now a soft link to ../data
+
+- Accessing the site will not change anything at this time because the same html file is being loaded through configmap.
+
+- But if you make any change to the content of the html file through the configmap, and restart the pod, all your changes will persist.
+
+Lets try that;
+
+- List the available configmaps. You can either use kubectl get configmap or kubectl get cm
