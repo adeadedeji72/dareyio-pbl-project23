@@ -545,3 +545,42 @@ We are interested in the website-index-file configmap
     kubectl edit cm website-index-file 
 ~~~
     It will open up a vim editor, or whatever default editor your system is configured to use. Update the content as you like. "Only the html data section", then save  the file.
+
+You should see an output like this
+~~~
+configmap/website-index-file edited
+~~~
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: website-index-file
+data:
+  # file to be mounted inside a volume
+  index-file: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>Welcome to DAREY.IO!</title>
+    <style>
+    html { color-scheme: light dark; }
+    body { width: 35em; margin: 0 auto;
+    font-family: Tahoma, Verdana, Arial, sans-serif; }
+    </style>
+    </head>
+    <body>
+    <h1>Welcome to DAREY.IO!</h1>
+    <p>If you see this page, It means you have successfully updated the configMap data in Kubernetes.</p>
+
+    <p>For online documentation and support please refer to
+    <a href="http://DAREY.IO/">DAREY.IO</a>.<br/>
+    Commercial support is available at
+    <a href="http://DAREY.IO/">DAREY.IO</a>.</p>
+
+    <p><em>Thank you and make sure you are on Darey's Masterclass Program.</em></p>
+    </body>
+    </html>
+    ~~~
+    
+    Without restarting the pod, your site should be loaded automatically.
+    
+    
