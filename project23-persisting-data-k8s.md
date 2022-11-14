@@ -965,11 +965,11 @@ data:
     
 Without restarting the pod, your site should be loaded automatically.
     
-    Insert webpage screenshot here ![]()
+![](edited-nginx.jpg)
     
 If you wish to restart the deployment for any reason, simply use the command
 ~~~
-   kubectl rollout restart deploy nginx-deployment 
+kubectl rollout restart deploy nginx-deployment 
 ~~~ 
 **output:**
 ~~~
