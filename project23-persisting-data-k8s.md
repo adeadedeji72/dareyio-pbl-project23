@@ -724,19 +724,70 @@ to demonstrate this, we will use the HTML file that came with Nginx. This file c
 Lets go through the below process so that you can see an example of a *configMap* use case.
 
 1. Remove the volumeMounts and PVC sections of the manifest and use kubectl to apply the configuration
+~~~
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    tier: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        tier: frontend
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+          protocol: TCP
+~~~
 
 2. port forward the service and ensure that you are able to see the "Welcome to nginx" page
+~~~
+kubectl port-forward nginx-deployment-55c7d849bc-wmmjf 3000:80
+~~~
+![](nginx-default-page.jpg)
 
 3. exec into the running container and keep a copy of the index.html file somewhere. For example
 ~~~
-kubectl exec -it nginx-deployment-xxxxx-xxxx -- bash
+kubectl exec -it nginx-deployment-55c7d849bc-wmmjf -- bash
 ~~~
 ~~~
 cat /usr/share/nginx/html/index.html
 ~~~
 **Output:**
 ~~~
+root@nginx-deployment-55c7d849bc-wmmjf:/# cat /usr/share/nginx/html/index.html
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
 
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
 ~~~
 4. Copy the output and save the file on your local pc because we will need it to create a configmap.
 
@@ -759,7 +810,7 @@ data:
     <!DOCTYPE html>
     <html>
     <head>
-    <title>Welcome to nginx!</title>
+    <title>Welcome to mynginx!</title>
     <style>
     html { color-scheme: light dark; }
     body { width: 35em; margin: 0 auto;
@@ -767,7 +818,7 @@ data:
     </style>
     </head>
     <body>
-    <h1>Welcome to nginx!</h1>
+    <h1>Welcome to mynginx!</h1>
     <p>If you see this page, the nginx web server is successfully installed and
     working. Further configuration is required.</p>
 
@@ -788,14 +839,19 @@ EOF
 kubectl apply -f nginx-configmap.yaml
 ~~~
 
-- Update the deployment file to use the configmap in the volumeMounts section
+Comfirm the configMap was created
+~~~
+kubectl get cm
+~~~
+**Output:**
+~~~
+NAME                 DATA   AGE
+kube-root-ca.crt     1      6h12m
+website-index-file   1      40s
 ~~~
 
-    </html>
-EOF
-Apply the new manifest file
- kubectl apply -f nginx-configmap.yaml 
-Update the deployment file to use the configmap in the volumeMounts section
+- Update the deployment file to use the configmap in the volumeMounts section
+
 cat <<EOF | tee ./nginx-pod-with-cm.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -834,16 +890,18 @@ EOF
 
 Now the *index.html* file is no longer ephemeral because it is using a configMap that has been mounted onto the filesystem. This is now evident when you **exec** into the pod and list the /usr/share/nginx/html directory
 ~~~
-kubectl exec -it nginx-deployment-xxxxxx-xxxx bash
+kubectl exec -it nginx-deployment-6f667898bc-g2vfj bash
 ~~~
 ~~~
 ls -ltr /usr/share/nginx/html
 ~~~
 **Output:**
 ~~~
-
+root@nginx-deployment-6f667898bc-g2vfj:/# ls -ltr /usr/share/nginx/html/
+total 0
+lrwxrwxrwx 1 root root 17 Nov 14 19:47 index.html -> ..data/index.html
 ~~~
-You can now see that the index.html is now a soft link to ../data
+You can now see that the index.html is now a soft link to ../data/index.html
 
 - Accessing the site will not change anything at this time because the same html file is being loaded through configmap.
 
@@ -857,13 +915,15 @@ kubectl get cm
 ~~~
 **Output:**
 ~~~
-
+NAME                 DATA   AGE
+kube-root-ca.crt     1      6h22m
+website-index-file   1      9m50s
 ~~~
 We are interested in the website-index-file configmap
 
   - Update the configmap. You can either update the manifest file, or the kubernetes object directly. Lets use the latter approach this time.
 ~~~
-    kubectl edit cm website-index-file 
+kubectl edit cm website-index-file 
 ~~~
     It will open up a vim editor, or whatever default editor your system is configured to use. Update the content as you like. "Only the html data section", then save  the file.
 
@@ -882,7 +942,7 @@ data:
     <!DOCTYPE html>
     <html>
     <head>
-    <title>Welcome to DAREY.IO!</title>
+    <title>Welcome to BAYO.IO!</title>
     <style>
     html { color-scheme: light dark; }
     body { width: 35em; margin: 0 auto;
@@ -890,7 +950,7 @@ data:
     </style>
     </head>
     <body>
-    <h1>Welcome to DAREY.IO!</h1>
+    <h1>Welcome to BAYO.IO!</h1>
     <p>If you see this page, It means you have successfully updated the configMap data in Kubernetes.</p>
 
     <p>For online documentation and support please refer to
