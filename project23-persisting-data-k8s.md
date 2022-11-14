@@ -614,8 +614,21 @@ kubectl get pvc
 
 **Output:**
 ~~~
-
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                        STORAGECLASS   REASON   AGE
+pvc-5732c9cd-7a7a-4129-9119-d079d880d586   2Gi        RWO            Delete           Bound    default/nginx-volume-claim   gp2                     43s
 ~~~
+If otherwise, you get this response for kubectl get pv:
+~~~
+No resource found in the default namespace
+~~~
+There one or both of these situation may have occurred 
+  1. There is no CSI (Container Storage Interface) driver (add-on) may be absent in the cluster
+  2. The Amazon EBS CSI plugin IAM role maybe absent
+You can follow this link to troubleshoot problems with Dynamic PV creation for Persistent Volume Claims [Troubleshoot here](https://aws.amazon.com/premiumsupport/knowledge-center/eks-troubleshoot-ebs-volume-mounts/)
+
+You can follow these links to resolve the issues respectively
+1. [Install SCI driver (add-on)](https://docs.aws.amazon.com/eks/latest/userguide/managing-ebs-csi.html)
+2. [Create the Amazon EBS CSI driver IAM role for service accounts](https://docs.aws.amazon.com/eks/latest/userguide/csi-iam-role.html)
 
 You can copy the PV Name and search in the AWS console. You will notice that the volum has been dynamically created there.
 
