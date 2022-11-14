@@ -630,9 +630,18 @@ You can follow these links to resolve the issues respectively
 1. [Install SCI driver (add-on)](https://docs.aws.amazon.com/eks/latest/userguide/managing-ebs-csi.html)
 2. [Create the Amazon EBS CSI driver IAM role for service accounts](https://docs.aws.amazon.com/eks/latest/userguide/csi-iam-role.html)
 
-You can copy the PV Name and search in the AWS console. You will notice that the volum has been dynamically created there.
+You can copy the PV Name and search in the AWS console. You will notice that the volume has been dynamically created there.
+~~~
+kubectl get pv
+~~~
+**Output:**
+~~~
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                        STORAGECLASS   REASON   AGE
+pvc-5732c9cd-7a7a-4129-9119-d079d880d586   2Gi        RWO            Delete           Bound    default/nginx-volume-claim   gp2                     100m
+~~~
 
-Insert the screenshot of the pv here! ![]()
+
+![](pv_volume.jpg)
 
 **Approach 2**
 
