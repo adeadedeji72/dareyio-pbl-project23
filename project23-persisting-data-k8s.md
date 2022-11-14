@@ -643,12 +643,77 @@ pvc-5732c9cd-7a7a-4129-9119-d079d880d586   2Gi        RWO            Delete     
 
 ![](pv_volume.jpg)
 
+Describe the PVC
+
+~~~
+kubectl describe pvc
+~~~
+
+**Output:**
+
+~~~
+Name:          nginx-volume-claim
+Namespace:     default
+StorageClass:  gp2
+Status:        Bound
+Volume:        pvc-5732c9cd-7a7a-4129-9119-d079d880d586
+Labels:        <none>
+Annotations:   pv.kubernetes.io/bind-completed: yes
+               pv.kubernetes.io/bound-by-controller: yes
+               volume.beta.kubernetes.io/storage-provisioner: ebs.csi.aws.com
+               volume.kubernetes.io/selected-node: ip-10-0-0-143.ec2.internal
+               volume.kubernetes.io/storage-provisioner: ebs.csi.aws.com
+Finalizers:    [kubernetes.io/pvc-protection]
+Capacity:      2Gi
+Access Modes:  RWO
+VolumeMode:    Filesystem
+Used By:       nginx-deployment-665bcc4958-s9zbv
+Events:        <none>
+~~~
+
+Describe PV
+
+~~~
+kubectl describe pv
+~~~
+
+**Output:**
+~~~
+Name:              pvc-5732c9cd-7a7a-4129-9119-d079d880d586
+Labels:            topology.kubernetes.io/region=us-east-1
+                   topology.kubernetes.io/zone=us-east-1a
+Annotations:       pv.kubernetes.io/migrated-to: ebs.csi.aws.com
+                   pv.kubernetes.io/provisioned-by: kubernetes.io/aws-ebs
+Finalizers:        [kubernetes.io/pv-protection external-attacher/ebs-csi-aws-com]
+StorageClass:      gp2
+Status:            Bound
+Claim:             default/nginx-volume-claim
+Reclaim Policy:    Delete
+Access Modes:      RWO
+VolumeMode:        Filesystem
+Capacity:          2Gi
+Node Affinity:     
+  Required Terms:  
+    Term 0:        topology.kubernetes.io/zone in [us-east-1a]
+                   topology.kubernetes.io/region in [us-east-1]
+Message:           
+Source:
+    Type:       AWSElasticBlockStore (a Persistent Disk resource in AWS)
+    VolumeID:   vol-0eaacac3812469a6e
+    FSType:     ext4
+    Partition:  0
+    ReadOnly:   false
+Events:         <none>
+~~~
+
 **Approach 2**
 
 1. Create a volumeClaimTemplate within the Pod spec. This approach is simply adding the manifest for PVC right within the Pod spec of the deployment.
 2. Then use the PVC name just as Approach 1 above.
 
-So rather than have 2 manifest files, you will define everything within the deployment manifest.
+So rather than have 2 manifest files, you will define everything within the deployment manifest.?
+
+*volumeClaimTemplates* is **only** supported in StatefulSet!
 
 ### CONFIGMAP ###
 
