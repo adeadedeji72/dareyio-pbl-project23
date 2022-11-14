@@ -851,7 +851,7 @@ website-index-file   1      40s
 ~~~
 
 - Update the deployment file to use the configmap in the volumeMounts section
-
+~~~
 cat <<EOF | tee ./nginx-pod-with-cm.yaml
 apiVersion: apps/v1
 kind: Deployment
