@@ -925,7 +925,7 @@ We are interested in the website-index-file configmap
 ~~~
 kubectl edit cm website-index-file 
 ~~~
-    It will open up a vim editor, or whatever default editor your system is configured to use. Update the content as you like. "Only the html data section", then save  the file.
+It will open up a vim editor, or whatever default editor your system is configured to use. Update the content as you like. "Only the html data section", then save  the file.
 
 You should see an output like this
 ~~~
@@ -963,11 +963,11 @@ data:
     </html>
 ~~~
     
-    Without restarting the pod, your site should be loaded automatically.
+Without restarting the pod, your site should be loaded automatically.
     
     Insert webpage screenshot here ![]()
     
-    If you wish to restart the deployment for any reason, simply use the command
+If you wish to restart the deployment for any reason, simply use the command
 ~~~
    kubectl rollout restart deploy nginx-deployment 
 ~~~ 
